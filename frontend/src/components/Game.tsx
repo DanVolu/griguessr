@@ -7,11 +7,13 @@ function Game() {
   const streetViewRef = useRef<HTMLDivElement>(null);
   const miniMapRef = useRef<HTMLDivElement>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
+  const actualLocationMarkerRef = useRef<google.maps.Marker | null>(null);
   const [gamePoints, setGamePoints] = useState(0);
 
   const [mapLoaded, setMapLoaded] = useState(false);
-  // const [distance, setDistance]     = useState<number | null>(null);
   const [score, setScore] = useState(0);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [hasGuessed, setHasGuessed] = useState(false);
   const CLOSE_ENOUGH_KM = 5;
 
   const [randomLocation] = useState(
@@ -33,7 +35,7 @@ function Game() {
       disableDefaultUI: true,
     });
 
-    const map = new window.google.maps.Map(miniMapRef.current, {
+    const newMap = new window.google.maps.Map(miniMapRef.current, {
       center: { lat: 54.67, lng: 25.09 },
       zoom: 13,
       disableDefaultUI: true,
@@ -45,8 +47,10 @@ function Game() {
         { featureType: "transit", stylers: [{ visibility: "off" }] },
       ],
     });
+    
+    setMap(newMap);
 
-    map.addListener("click", (e: google.maps.MapMouseEvent) => {
+    newMap.addListener("click", (e: google.maps.MapMouseEvent) => {
       const clicked = e.latLng;
       if (!clicked) return;
 
@@ -54,7 +58,15 @@ function Game() {
 
       markerRef.current = new window.google.maps.Marker({
         position: clicked,
-        map,
+        map: newMap,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: "#4285F4",
+          fillOpacity: 1,
+          strokeColor: "#FFFFFF",
+          strokeWeight: 2,
+        },
       });
 
       const target = new window.google.maps.LatLng(
@@ -80,6 +92,52 @@ function Game() {
     });
   }, [mapLoaded, randomLocation]);
 
+  const revealActualLocation = () => {
+    if (!map) return;
+
+    actualLocationMarkerRef.current = new window.google.maps.Marker({
+      position: {
+        lat: randomLocation.lat,
+        lng: randomLocation.lng
+      },
+      map: map,
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: "#FF0000",
+        fillOpacity: 1,
+        strokeColor: "#FFFFFF",
+        strokeWeight: 2,
+      },
+      title: "Actual Location"
+    });
+
+    //sita veliau reiks pasiaiskinti :DD
+    if (markerRef.current) {
+      const guessPosition = markerRef.current.getPosition();
+      if (guessPosition) {
+        new window.google.maps.Polyline({
+          path: [
+            guessPosition.toJSON(),
+            { lat: randomLocation.lat, lng: randomLocation.lng }
+          ],
+          geodesic: true,
+          strokeColor: '#FFFFFF',
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          map: map
+        });
+      }
+    }
+
+    const bounds = new window.google.maps.LatLngBounds();
+    if (markerRef.current?.getPosition()) {
+      bounds.extend(markerRef.current.getPosition()!);
+    }
+    bounds.extend(new window.google.maps.LatLng(randomLocation.lat, randomLocation.lng));
+    map.fitBounds(bounds, 50);
+  };
+
   if (!randomLocation) return null;
 
   return (
@@ -101,10 +159,11 @@ function Game() {
           <button
             className="z-20 rounded-md border-2 bg-[#A2BEEE] w-64 md:w-80 px-6 py-2 text-white font-semibold hover:opacity-90 transition"
             onClick={() => {
-              if (score > 0) {
-                console.log(`Guessed: ${score}`);
+              if (!hasGuessed && score > 0) {
                 setGamePoints((prev) => prev + score);
-              } else {
+                revealActualLocation();
+                setHasGuessed(true);
+              } else if (!hasGuessed) {
                 console.log("Make a guess first");
               }
             }}
