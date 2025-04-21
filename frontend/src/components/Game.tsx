@@ -14,7 +14,7 @@ function Game() {
   const [score, setScore] = useState(0);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [hasGuessed, setHasGuessed] = useState(false);
-  const CLOSE_ENOUGH_KM = 5;
+  const [clickedLocation, setClickedLocation] = useState<google.maps.LatLng | null>(null);
 
   const [randomLocation] = useState(
     LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)]
@@ -47,12 +47,14 @@ function Game() {
         { featureType: "transit", stylers: [{ visibility: "off" }] },
       ],
     });
-    
+
     setMap(newMap);
 
     newMap.addListener("click", (e: google.maps.MapMouseEvent) => {
       const clicked = e.latLng;
       if (!clicked) return;
+
+      setClickedLocation(clicked);
 
       markerRef.current?.setMap(null);
 
@@ -83,22 +85,16 @@ function Game() {
 
       const score = Math.max(0, Math.round(500 - km * 750));
       setScore(score);
-
-      if (km <= CLOSE_ENOUGH_KM) {
-        console.log(
-          `🎉 Within ${CLOSE_ENOUGH_KM} km — you scored ${score} points!`
-        );
-      }
     });
   }, [mapLoaded, randomLocation]);
 
   const revealActualLocation = () => {
-    if (!map) return;
+    if (!map || !clickedLocation) return;
 
     actualLocationMarkerRef.current = new window.google.maps.Marker({
       position: {
         lat: randomLocation.lat,
-        lng: randomLocation.lng
+        lng: randomLocation.lng,
       },
       map: map,
       icon: {
@@ -109,32 +105,26 @@ function Game() {
         strokeColor: "#FFFFFF",
         strokeWeight: 2,
       },
-      title: "Actual Location"
+      title: "Actual Location",
     });
 
-    //sita veliau reiks pasiaiskinti :DD
-    if (markerRef.current) {
-      const guessPosition = markerRef.current.getPosition();
-      if (guessPosition) {
-        new window.google.maps.Polyline({
-          path: [
-            guessPosition.toJSON(),
-            { lat: randomLocation.lat, lng: randomLocation.lng }
-          ],
-          geodesic: true,
-          strokeColor: '#FFFFFF',
-          strokeOpacity: 0.8,
-          strokeWeight: 2,
-          map: map
-        });
-      }
-    }
+    new window.google.maps.Polyline({
+      path: [
+        clickedLocation.toJSON(),
+        { lat: randomLocation.lat, lng: randomLocation.lng },
+      ],
+      geodesic: true,
+      strokeColor: "#FFFFFF",
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      map: map,
+    });
 
     const bounds = new window.google.maps.LatLngBounds();
-    if (markerRef.current?.getPosition()) {
-      bounds.extend(markerRef.current.getPosition()!);
-    }
-    bounds.extend(new window.google.maps.LatLng(randomLocation.lat, randomLocation.lng));
+    bounds.extend(clickedLocation);
+    bounds.extend(
+      new window.google.maps.LatLng(randomLocation.lat, randomLocation.lng)
+    );
     map.fitBounds(bounds, 50);
   };
 
@@ -151,20 +141,22 @@ function Game() {
       <div className="relative w-full h-screen">
         <div ref={streetViewRef} className="w-full h-full" />
 
-        <div className="absolute top-1 left-1 z-50 rounded-md border-2 bg-[#A2BEEE] px-6 py-2 text-white font-semibold space-y-1">
+        <div className="absolute top-1 left-1 z-50 rounded-md border-2 bg-[#2D3E2B] px-6 py-2 text-white font-semibold space-y-1">
           <p>Taškai:{gamePoints}</p>
         </div>
 
         <div className="absolute bottom-0 right-0 z-10 flex flex-col items-end py-4 px-2 gap-2">
           <button
-            className="z-20 rounded-md border-2 bg-[#A2BEEE] w-64 md:w-80 px-6 py-2 text-white font-semibold hover:opacity-90 transition"
+            className="z-20 rounded-md border-2 bg-[#2D3E2B] w-64 md:w-80 px-6 py-2 cursor-pointer text-white font-semibold hover:opacity-90 transition"
             onClick={() => {
-              if (!hasGuessed && score > 0) {
-                setGamePoints((prev) => prev + score);
+              if (!hasGuessed && clickedLocation) {
+                if (score > 0) {
+                  setGamePoints((prev) => prev + score);
+                }
                 revealActualLocation();
                 setHasGuessed(true);
               } else if (!hasGuessed) {
-                console.log("Make a guess first");
+                console.log("Guess");
               }
             }}
           >
