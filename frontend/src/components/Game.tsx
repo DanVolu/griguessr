@@ -33,6 +33,7 @@ function Game() {
       position: randomLocation,
       pov: { heading: 180, pitch: 5 },
       disableDefaultUI: true,
+      motionTracking: false,
     });
 
     const newMap = new window.google.maps.Map(miniMapRef.current, {
