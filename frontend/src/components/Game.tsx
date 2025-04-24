@@ -8,26 +8,21 @@ function Game() {
   const miniMapRef = useRef<HTMLDivElement>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const actualLocationMarkerRef = useRef<google.maps.Marker | null>(null);
-  const [gamePoints, setGamePoints] = useState(0);
+  const polylineRef = useRef<google.maps.Polyline | null>(null);
 
+  const [gamePoints, setGamePoints] = useState(0);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [score, setScore] = useState(0);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [hasGuessed, setHasGuessed] = useState(false);
   const [clickedLocation, setClickedLocation] = useState<google.maps.LatLng | null>(null);
 
-  const [randomLocation] = useState(
-    LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)]
+  const [randomLocation, setRandomLocation] = useState(
+    () => LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)]
   );
 
-  useEffect(() => {
-    if (
-      !mapLoaded ||
-      !streetViewRef.current ||
-      !miniMapRef.current ||
-      !window.google?.maps?.geometry
-    )
-      return;
+  const setupStreetView = () => {
+    if (!streetViewRef.current || !randomLocation) return;
 
     new window.google.maps.StreetViewPanorama(streetViewRef.current, {
       position: randomLocation,
@@ -35,6 +30,10 @@ function Game() {
       disableDefaultUI: true,
       motionTracking: false,
     });
+  };
+
+  const setupMap = () => {
+    if (!miniMapRef.current) return;
 
     const newMap = new window.google.maps.Map(miniMapRef.current, {
       center: { lat: 54.67, lng: 25.09 },
@@ -52,12 +51,15 @@ function Game() {
     setMap(newMap);
 
     newMap.addListener("click", (e: google.maps.MapMouseEvent) => {
+      if (hasGuessed) return;
       const clicked = e.latLng;
       if (!clicked) return;
 
       setClickedLocation(clicked);
 
-      markerRef.current?.setMap(null);
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+      }
 
       markerRef.current = new window.google.maps.Marker({
         position: clicked,
@@ -71,6 +73,8 @@ function Game() {
           strokeWeight: 2,
         },
       });
+
+      if (!randomLocation) return;
 
       const target = new window.google.maps.LatLng(
         randomLocation.lat,
@@ -87,10 +91,24 @@ function Game() {
       const score = Math.max(0, Math.round(500 - km * 750));
       setScore(score);
     });
+  };
+
+  useEffect(() => {
+    if (!mapLoaded || !window.google?.maps?.geometry) return;
+    setupStreetView();
+    setupMap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapLoaded, randomLocation]);
 
   const revealActualLocation = () => {
-    if (!map || !clickedLocation) return;
+    if (!map || !clickedLocation || !randomLocation) return;
+
+    if (actualLocationMarkerRef.current) {
+      actualLocationMarkerRef.current.setMap(null);
+    }
+    if (polylineRef.current) {
+      polylineRef.current.setMap(null);
+    }
 
     actualLocationMarkerRef.current = new window.google.maps.Marker({
       position: {
@@ -109,7 +127,7 @@ function Game() {
       title: "Actual Location",
     });
 
-    new window.google.maps.Polyline({
+    polylineRef.current = new window.google.maps.Polyline({
       path: [
         clickedLocation.toJSON(),
         { lat: randomLocation.lat, lng: randomLocation.lng },
@@ -129,6 +147,31 @@ function Game() {
     map.fitBounds(bounds, 50);
   };
 
+  const startNewRound = () => {
+    if (markerRef.current) {
+      markerRef.current.setMap(null);
+      markerRef.current = null;
+    }
+    if (actualLocationMarkerRef.current) {
+      actualLocationMarkerRef.current.setMap(null);
+      actualLocationMarkerRef.current = null;
+    }
+    if (polylineRef.current) {
+      polylineRef.current.setMap(null);
+      polylineRef.current = null;
+    }
+
+    setHasGuessed(false);
+    setClickedLocation(null);
+    setScore(0);
+    setRandomLocation(LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)]);
+
+    if (map) {
+      map.setCenter({ lat: 54.67, lng: 25.09 });
+      map.setZoom(13);
+    }
+  };
+
   if (!randomLocation) return null;
 
   return (
@@ -143,26 +186,33 @@ function Game() {
         <div ref={streetViewRef} className="w-full h-full" />
 
         <div className="absolute top-1 left-1 z-50 rounded-md border-2 bg-[#2D3E2B] px-6 py-2 text-white font-semibold space-y-1">
-          <p>Taškai:{gamePoints}</p>
+          <p>Taškai: {gamePoints}</p>
         </div>
 
         <div className="absolute bottom-0 right-0 z-10 flex flex-col items-end py-4 px-2 gap-2">
-          <button
-            className="z-20 rounded-md border-2 bg-[#2D3E2B] w-64 md:w-80 px-6 py-2 cursor-pointer text-white font-semibold hover:opacity-90 transition"
-            onClick={() => {
-              if (!hasGuessed && clickedLocation) {
-                if (score > 0) {
-                  setGamePoints((prev) => prev + score);
+          {!hasGuessed ? (
+            <button
+              className="z-20 rounded-md border-2 bg-[#2D3E2B] w-64 md:w-80 px-6 py-2 cursor-pointer text-white font-semibold hover:opacity-90 transition"
+              onClick={() => {
+                if (clickedLocation) {
+                  if (score > 0) {
+                    setGamePoints((prev) => prev + score);
+                  }
+                  revealActualLocation();
+                  setHasGuessed(true);
                 }
-                revealActualLocation();
-                setHasGuessed(true);
-              } else if (!hasGuessed) {
-                console.log("Guess");
-              }
-            }}
-          >
-            Spėti
-          </button>
+              }}
+            >
+              Spėti
+            </button>
+          ) : (
+            <button
+              className="z-20 rounded-md border-2 bg-[#2D3E2B] w-64 md:w-80 px-6 py-2 cursor-pointer text-white font-semibold hover:opacity-90 transition"
+              onClick={startNewRound}
+            >
+              Kitas turas
+            </button>
+          )}
 
           <div
             ref={miniMapRef}
