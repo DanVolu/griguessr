@@ -10,16 +10,22 @@ function Game() {
   const actualLocationMarkerRef = useRef<google.maps.Marker | null>(null);
   const polylineRef = useRef<google.maps.Polyline | null>(null);
 
-  const [gamePoints, setGamePoints] = useState(0);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [score, setScore] = useState(0);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [hasGuessed, setHasGuessed] = useState(false);
-  const [clickedLocation, setClickedLocation] = useState<google.maps.LatLng | null>(null);
+  const [clickedLocation, setClickedLocation] =
+    useState<google.maps.LatLng | null>(null);
 
-  const [randomLocation, setRandomLocation] = useState(
-    () => LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)]
-  );
+  const [usedIndices, setUsedIndices] = useState<number[]>([]);
+  const [round, setRound] = useState(1);
+  const [gamePoints, setGamePoints] = useState(0);
+  const [highScore, setHighScore] = useState(0);
+  const [randomLocation, setRandomLocation] = useState(() => {
+    const index = Math.floor(Math.random() * LOCATIONS.length);
+    setUsedIndices([index]);
+    return LOCATIONS[index];
+  });
 
   const setupStreetView = () => {
     if (!streetViewRef.current || !randomLocation) return;
@@ -52,6 +58,7 @@ function Game() {
 
     newMap.addListener("click", (e: google.maps.MapMouseEvent) => {
       if (hasGuessed) return;
+
       const clicked = e.latLng;
       if (!clicked) return;
 
@@ -97,7 +104,7 @@ function Game() {
     if (!mapLoaded || !window.google?.maps?.geometry) return;
     setupStreetView();
     setupMap();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapLoaded, randomLocation]);
 
   const revealActualLocation = () => {
@@ -106,6 +113,7 @@ function Game() {
     if (actualLocationMarkerRef.current) {
       actualLocationMarkerRef.current.setMap(null);
     }
+
     if (polylineRef.current) {
       polylineRef.current.setMap(null);
     }
@@ -152,10 +160,12 @@ function Game() {
       markerRef.current.setMap(null);
       markerRef.current = null;
     }
+
     if (actualLocationMarkerRef.current) {
       actualLocationMarkerRef.current.setMap(null);
       actualLocationMarkerRef.current = null;
     }
+
     if (polylineRef.current) {
       polylineRef.current.setMap(null);
       polylineRef.current = null;
@@ -164,7 +174,25 @@ function Game() {
     setHasGuessed(false);
     setClickedLocation(null);
     setScore(0);
-    setRandomLocation(LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)]);
+
+    if (round >= 5) {
+      setHighScore((prev) => Math.max(prev, gamePoints));
+      setGamePoints(0);
+      setRound(1);
+      setUsedIndices([]);
+      const index = Math.floor(Math.random() * LOCATIONS.length);
+      setUsedIndices([index]);
+      setRandomLocation(LOCATIONS[index]);
+    } else {
+      let index;
+      do {
+        index = Math.floor(Math.random() * LOCATIONS.length);
+      } while (usedIndices.includes(index));
+
+      setUsedIndices([...usedIndices, index]);
+      setRandomLocation(LOCATIONS[index]);
+      setRound((prev) => prev + 1);
+    }
 
     if (map) {
       map.setCenter({ lat: 54.67, lng: 25.09 });
@@ -187,6 +215,8 @@ function Game() {
 
         <div className="absolute top-1 left-1 z-50 rounded-md border-2 bg-[#2D3E2B] px-6 py-2 text-white font-semibold space-y-1">
           <p>Taškai: {gamePoints}</p>
+          <p>Geriausias rezultatas: {highScore}</p>
+          <p>Turas: {round}/5</p>
         </div>
 
         <div className="absolute bottom-0 right-0 z-10 flex flex-col items-end py-4 px-2 gap-2">
