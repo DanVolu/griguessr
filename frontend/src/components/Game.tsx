@@ -1,8 +1,8 @@
-// File: frontend/src/components/Game.tsx
 import { useState, useRef, useEffect } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import LOCATIONS from "../data/location";
 import StartMenu from "./StartMenu";
+import GameSummary from "./GameSummary";
 
 function Game() {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -13,15 +13,26 @@ function Game() {
   const polylineRef = useRef<google.maps.Polyline | null>(null);
 
   const [showStartMenu, setShowStartMenu] = useState(true);
+  const [showGameSummary, setShowGameSummary] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [score, setScore] = useState(0);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [hasGuessed, setHasGuessed] = useState(false);
-  const [clickedLocation, setClickedLocation] = useState<google.maps.LatLng | null>(null);
+  const [clickedLocation, setClickedLocation] =
+    useState<google.maps.LatLng | null>(null);
   const [usedIndices, setUsedIndices] = useState<number[]>([]);
   const [round, setRound] = useState(1);
   const [gamePoints, setGamePoints] = useState(0);
   const [highScore, setHighScore] = useState(0);
+  const [roundResults, setRoundResults] = useState<
+    Array<{
+      round: number;
+      score: number;
+      guessLocation: { lat: number; lng: number } | null;
+      actualLocation: { lat: number; lng: number } | null;
+      distance: number | null;
+    }>
+  >([]);
   const [randomLocation, setRandomLocation] = useState(() => {
     const index = Math.floor(Math.random() * LOCATIONS.length);
     setUsedIndices([index]);
@@ -83,8 +94,15 @@ function Game() {
 
       if (!randomLocation) return;
 
-      const target = new window.google.maps.LatLng(randomLocation.lat, randomLocation.lng);
-      const meters = window.google.maps.geometry.spherical.computeDistanceBetween(clicked, target);
+      const target = new window.google.maps.LatLng(
+        randomLocation.lat,
+        randomLocation.lng
+      );
+      const meters =
+        window.google.maps.geometry.spherical.computeDistanceBetween(
+          clicked,
+          target
+        );
       const km = meters / 1000;
       const score = Math.max(0, Math.round(500 - km * 750));
       setScore(score);
@@ -92,11 +110,17 @@ function Game() {
   };
 
   useEffect(() => {
-    if (!mapLoaded || !window.google?.maps?.geometry || showStartMenu) return;
+    if (
+      !mapLoaded ||
+      !window.google?.maps?.geometry ||
+      showStartMenu ||
+      showGameSummary
+    )
+      return;
     setupStreetView();
     setupMap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapLoaded, randomLocation, showStartMenu]);
+  }, [mapLoaded, randomLocation, showStartMenu, showGameSummary]);
 
   const revealActualLocation = () => {
     if (!map || !clickedLocation || !randomLocation) return;
@@ -137,8 +161,33 @@ function Game() {
 
     const bounds = new window.google.maps.LatLngBounds();
     bounds.extend(clickedLocation);
-    bounds.extend(new window.google.maps.LatLng(randomLocation.lat, randomLocation.lng));
+    bounds.extend(
+      new window.google.maps.LatLng(randomLocation.lat, randomLocation.lng)
+    );
     map.fitBounds(bounds, 50);
+  };
+
+  const saveRoundResult = () => {
+    if (!clickedLocation || !randomLocation) return;
+
+    const target = new window.google.maps.LatLng(
+      randomLocation.lat,
+      randomLocation.lng
+    );
+    const meters = window.google.maps.geometry.spherical.computeDistanceBetween(
+      clickedLocation,
+      target
+    );
+
+    const roundResult = {
+      round: round,
+      score: score,
+      guessLocation: clickedLocation.toJSON(),
+      actualLocation: { lat: randomLocation.lat, lng: randomLocation.lng },
+      distance: meters,
+    };
+
+    setRoundResults((prev) => [...prev, roundResult]);
   };
 
   const startNewRound = () => {
@@ -163,13 +212,7 @@ function Game() {
 
     if (round >= 5) {
       setHighScore((prev) => Math.max(prev, gamePoints));
-      setGamePoints(0);
-      setRound(1);
-      setUsedIndices([]);
-      const index = Math.floor(Math.random() * LOCATIONS.length);
-      setUsedIndices([index]);
-      setRandomLocation(LOCATIONS[index]);
-      setShowStartMenu(true);
+      setShowGameSummary(true);
     } else {
       let index;
       do {
@@ -191,18 +234,47 @@ function Game() {
     setShowStartMenu(false);
   };
 
+  const handlePlayAgain = () => {
+    setGamePoints(0);
+    setRound(1);
+    setRoundResults([]);
+    setUsedIndices([]);
+    const index = Math.floor(Math.random() * LOCATIONS.length);
+    setUsedIndices([index]);
+    setRandomLocation(LOCATIONS[index]);
+    setShowGameSummary(false);
+  };
+
+  const handleReturnToMenu = () => {
+    setGamePoints(0);
+    setRound(1);
+    setRoundResults([]);
+    setUsedIndices([]);
+    const index = Math.floor(Math.random() * LOCATIONS.length);
+    setUsedIndices([index]);
+    setRandomLocation(LOCATIONS[index]);
+    setShowGameSummary(false);
+    setShowStartMenu(true);
+  };
+
   function renderScoreDisplay() {
     return (
       <div className="fixed top-8 left-8 z-50 bg-black rounded-lg p-4 text-white shadow-xl backdrop-blur-md border border-gray-700">
         <div className="flex flex-col space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-300 font-medium">Taškai</span>
-            <span className="text-2xl font-bold text-green-400 pl-4">{gamePoints}</span>
+            <span className="text-2xl font-bold text-green-400 pl-4">
+              {gamePoints}
+            </span>
           </div>
           <div className="h-px w-full bg-gray-700 opacity-50"></div>
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-300 font-medium">Geriausias</span>
-            <span className="text-xl font-bold text-yellow-400 pl-4">{highScore}</span>
+            <span className="text-sm text-gray-300 font-medium">
+              Geriausias rezultatas
+            </span>
+            <span className="text-xl font-bold text-yellow-400 pl-4">
+              {highScore}
+            </span>
           </div>
         </div>
       </div>
@@ -216,7 +288,9 @@ function Game() {
           <div
             key={i}
             className={`w-4 h-4 rounded-full ${
-              i < round ? "bg-green-400 shadow-green-400/30 shadow-md" : "bg-gray-500"
+              i < round
+                ? "bg-green-400 shadow-green-400/30 shadow-md"
+                : "bg-gray-500"
             }`}
           />
         ))}
@@ -238,19 +312,20 @@ function Game() {
                   setGamePoints((prev) => prev + score);
                 }
                 revealActualLocation();
+                saveRoundResult();
                 setHasGuessed(true);
               }
             }}
             disabled={!clickedLocation}
           >
-            🎯 Spėti
+            Spėti
           </button>
         ) : (
           <button
             className="z-20 flex items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 w-64 md:w-80 px-6 py-3 text-white font-bold shadow-lg hover:from-blue-500 hover:to-blue-600 transition transform hover:scale-105"
             onClick={startNewRound}
           >
-            🔄 Kitas turas
+            Kitas turas
           </button>
         )}
         <div
@@ -271,7 +346,7 @@ function Game() {
               </div>
               <div className="text-sm text-gray-300">
                 Jūs surinkote
-                <span className="text-green-400 font-bold">{score}</span> taškų
+                <span className="text-green-400 font-bold"> {score}</span> taškų
               </div>
             </div>
           </div>
@@ -292,6 +367,14 @@ function Game() {
     >
       {showStartMenu ? (
         <StartMenu onStartGame={handleStartGame} />
+      ) : showGameSummary ? (
+        <GameSummary
+          rounds={roundResults}
+          totalScore={gamePoints}
+          highScore={highScore}
+          onPlayAgain={handlePlayAgain}
+          onReturnToMenu={handleReturnToMenu}
+        />
       ) : (
         <div className="relative w-full h-screen overflow-hidden">
           <div ref={streetViewRef} className="w-full h-full" />
@@ -309,7 +392,12 @@ function Game() {
               viewBox="0 0 24 24"
               stroke="currentColor"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
