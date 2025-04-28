@@ -3,6 +3,7 @@ import { APIProvider } from "@vis.gl/react-google-maps";
 import LOCATIONS from "../data/location";
 import StartMenu from "./StartMenu";
 import GameSummary from "./GameSummary";
+import ExplanationModal from "./ExplanationModal";
 
 function Game() {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -14,6 +15,7 @@ function Game() {
 
   const [showStartMenu, setShowStartMenu] = useState(true);
   const [showGameSummary, setShowGameSummary] = useState(false);
+  const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [score, setScore] = useState(0);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -366,7 +368,7 @@ function Game() {
       onError={(err) => console.error("Google Maps failed to load", err)}
     >
       {showStartMenu ? (
-        <StartMenu onStartGame={handleStartGame} />
+        <StartMenu onStartGame={handleStartGame} onShowHelp={() => setShowExplanationModal(true)} />
       ) : showGameSummary ? (
         <GameSummary
           rounds={roundResults}
@@ -381,6 +383,28 @@ function Game() {
           {renderScoreDisplay()}
           {renderRoundDisplay()}
           {renderGuessUI()}
+          
+          <button
+            onClick={() => setShowExplanationModal(true)}
+            className="absolute top-4 right-16 z-50 bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-full shadow-lg transition transform hover:scale-110"
+            title="Kaip žaisti?"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M12 21a9 9 0 100-18 9 9 0 000 18z"
+              />
+            </svg>
+          </button>
+          
           <button
             onClick={() => setShowStartMenu(true)}
             className="absolute top-4 right-4 z-50 bg-red-600 hover:bg-red-500 text-white p-2 rounded-full shadow-lg transition transform hover:scale-110"
@@ -400,6 +424,11 @@ function Game() {
               />
             </svg>
           </button>
+          
+          <ExplanationModal 
+            isOpen={showExplanationModal} 
+            onClose={() => setShowExplanationModal(false)} 
+          />
         </div>
       )}
     </APIProvider>

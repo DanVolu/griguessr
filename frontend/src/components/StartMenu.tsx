@@ -2,6 +2,7 @@ import { useState } from "react";
 
 interface StartMenuProps {
   onStartGame: () => void;
+  onShowHelp: () => void;
 }
 
 function StartMenu({ onStartGame }: StartMenuProps) {
