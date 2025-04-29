@@ -16,6 +16,7 @@ function Game() {
   const [showStartMenu, setShowStartMenu] = useState(true);
   const [showGameSummary, setShowGameSummary] = useState(false);
   const [showExplanationModal, setShowExplanationModal] = useState(false);
+  const [gameStarting, setGameStarting] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [score, setScore] = useState(0);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -46,7 +47,7 @@ function Game() {
 
     new window.google.maps.StreetViewPanorama(streetViewRef.current, {
       position: randomLocation,
-      pov: { heading: 180, pitch: 5 },
+      pov: { heading: 220, pitch: 5 },
       disableDefaultUI: true,
       motionTracking: false,
     });
@@ -116,13 +117,20 @@ function Game() {
       !mapLoaded ||
       !window.google?.maps?.geometry ||
       showStartMenu ||
-      showGameSummary
+      showGameSummary ||
+      showExplanationModal
     )
       return;
     setupStreetView();
     setupMap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapLoaded, randomLocation, showStartMenu, showGameSummary]);
+  }, [
+    mapLoaded,
+    randomLocation,
+    showStartMenu,
+    showGameSummary,
+    showExplanationModal,
+  ]);
 
   const revealActualLocation = () => {
     if (!map || !clickedLocation || !randomLocation) return;
@@ -233,7 +241,16 @@ function Game() {
   };
 
   const handleStartGame = () => {
-    setShowStartMenu(false);
+    setGameStarting(true);
+    setShowExplanationModal(true);
+  };
+
+  const handleExplanationClose = () => {
+    setShowExplanationModal(false);
+    if (gameStarting) {
+      setGameStarting(false);
+      setShowStartMenu(false);
+    }
   };
 
   const handlePlayAgain = () => {
@@ -261,7 +278,7 @@ function Game() {
 
   function renderScoreDisplay() {
     return (
-      <div className="fixed top-8 left-8 z-50 bg-black rounded-lg p-4 text-white shadow-xl backdrop-blur-md border border-gray-700">
+      <div className="fixed md:top-4 top-16 left-4 z-50 bg-black rounded-lg p-4 text-white shadow-xl backdrop-blur-md border border-gray-700">
         <div className="flex flex-col space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-300 font-medium">Taškai</span>
@@ -368,7 +385,10 @@ function Game() {
       onError={(err) => console.error("Google Maps failed to load", err)}
     >
       {showStartMenu ? (
-        <StartMenu onStartGame={handleStartGame} onShowHelp={() => setShowExplanationModal(true)} />
+        <StartMenu
+          onStartGame={handleStartGame}
+          onShowHelp={() => setShowExplanationModal(true)}
+        />
       ) : showGameSummary ? (
         <GameSummary
           rounds={roundResults}
@@ -383,7 +403,7 @@ function Game() {
           {renderScoreDisplay()}
           {renderRoundDisplay()}
           {renderGuessUI()}
-          
+
           <button
             onClick={() => setShowExplanationModal(true)}
             className="absolute top-4 right-16 z-50 bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-full shadow-lg transition transform hover:scale-110"
@@ -404,7 +424,7 @@ function Game() {
               />
             </svg>
           </button>
-          
+
           <button
             onClick={() => setShowStartMenu(true)}
             className="absolute top-4 right-4 z-50 bg-red-600 hover:bg-red-500 text-white p-2 rounded-full shadow-lg transition transform hover:scale-110"
@@ -424,13 +444,13 @@ function Game() {
               />
             </svg>
           </button>
-          
-          <ExplanationModal 
-            isOpen={showExplanationModal} 
-            onClose={() => setShowExplanationModal(false)} 
-          />
         </div>
       )}
+
+      <ExplanationModal
+        isOpen={showExplanationModal}
+        onClose={handleExplanationClose}
+      />
     </APIProvider>
   );
 }

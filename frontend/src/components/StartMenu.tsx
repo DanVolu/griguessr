@@ -19,9 +19,9 @@ function StartMenu({ onStartGame }: StartMenuProps) {
       />
 
       <div className="text-center mb-12 relative z-10">
-        <h1 className="text-5xl font-bold text-white mb-2">Žinai Kur?</h1>
+        <h1 className="text-5xl font-bold text-white mb-2">Kur? Čia!</h1>
         <p className="text-xl text-gray-100">
-          Patikrink savo geografijos žinias
+          Patikrink savo miesto geografijos žinias
         </p>
       </div>
 
