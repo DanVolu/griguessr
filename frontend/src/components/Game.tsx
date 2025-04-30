@@ -276,37 +276,13 @@ function Game() {
     setShowStartMenu(true);
   };
 
-  function renderScoreDisplay() {
-    return (
-      <div className="fixed md:top-4 top-16 left-4 z-50 bg-black rounded-lg p-4 text-white shadow-xl backdrop-blur-md border border-gray-700">
-        <div className="flex flex-col space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-300 font-medium">Taškai</span>
-            <span className="text-2xl font-bold text-green-400 pl-4">
-              {gamePoints}
-            </span>
-          </div>
-          <div className="h-px w-full bg-gray-700 opacity-50"></div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-300 font-medium">
-              Geriausias rezultatas
-            </span>
-            <span className="text-xl font-bold text-yellow-400 pl-4">
-              {highScore}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   function renderRoundDisplay() {
     return (
-      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-black/70 rounded-full px-6 py-2 flex space-x-4 shadow-lg backdrop-blur-md">
+      <div className="fixed top-[8rem] left-4 z-50 md:top-4 md:left-1/2 md:transform md:-translate-x-1/2 bg-black/70 rounded-full px-4 py-2 flex space-x-2 md:space-x-4 shadow-lg backdrop-blur-md">
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className={`w-4 h-4 rounded-full ${
+            className={`w-3 h-3 md:w-4 md:h-4 rounded-full ${
               i < round
                 ? "bg-green-400 shadow-green-400/30 shadow-md"
                 : "bg-gray-500"
@@ -317,12 +293,34 @@ function Game() {
     );
   }
 
+  function renderScoreDisplay() {
+    return (
+      <div className="fixed select-none top-4 left-4 z-50 bg-black rounded-lg p-4 text-white shadow-xl backdrop-blur-md border border-gray-700 w-40">
+        <div className="flex flex-col select-none space-y-2">
+          <div className="flex justify-between select-none items-center">
+            <span className="text-sm text-gray-300 font-medium">Taškai</span>
+            <span className="text-xl font-bold text-green-400">
+              {gamePoints}
+            </span>
+          </div>
+          <div className="h-px w-full bg-gray-700 opacity-50"></div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-300 font-medium">Rekordas</span>
+            <span className="text-lg font-bold text-yellow-400">
+              {highScore}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const renderGuessUI = () => {
     return (
-      <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-3">
+      <div className="absolute w-auto left-4 right-4 md:left-auto md:right-4 bottom-4 z-10 flex flex-col items-center md:items-end gap-3">
         {!hasGuessed ? (
           <button
-            className={`z-20 flex items-center justify-center rounded-lg bg-gradient-to-r from-green-600 to-green-700 w-64 md:w-80 px-6 py-3 text-white font-bold shadow-lg hover:from-green-500 hover:to-green-600 transition transform hover:scale-105 ${
+            className={`z-20 flex items-center justify-center rounded-lg bg-gradient-to-r from-green-600 to-green-700 w-full md:w-80 px-6 py-3 text-white font-bold shadow-lg hover:from-green-500 hover:to-green-600 transition transform hover:scale-105 select-none ${
               !clickedLocation ? "opacity-50 cursor-not-allowed" : ""
             }`}
             onClick={() => {
@@ -341,7 +339,7 @@ function Game() {
           </button>
         ) : (
           <button
-            className="z-20 flex items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 w-64 md:w-80 px-6 py-3 text-white font-bold shadow-lg hover:from-blue-500 hover:to-blue-600 transition transform hover:scale-105"
+            className="z-20 flex items-center justify-center select-none rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 w-64 md:w-80 px-6 py-3 text-white font-bold shadow-lg hover:from-blue-500 hover:to-blue-600 transition transform hover:scale-105"
             onClick={startNewRound}
           >
             Kitas turas
@@ -349,10 +347,11 @@ function Game() {
         )}
         <div
           ref={miniMapRef}
-          className="w-64 h-48 md:w-80 md:h-56 rounded-lg shadow-xl border-2 border-gray-300"
+          className="w-full h-48 md:w-80 md:h-56 rounded-lg shadow-xl border-2 border-gray-300"
         />
+
         {hasGuessed && (
-          <div className="bg-black bg-opacity-80 rounded-lg p-3 text-center w-64 md:w-80">
+          <div className="bg-black bg-opacity-80 rounded-lg p-3 text-center w-full md:w-80">
             <div className="text-white">
               <div className="font-bold text-lg">
                 {score === 0
@@ -404,46 +403,48 @@ function Game() {
           {renderRoundDisplay()}
           {renderGuessUI()}
 
-          <button
-            onClick={() => setShowExplanationModal(true)}
-            className="absolute top-4 right-16 z-50 bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-full shadow-lg transition transform hover:scale-110"
-            title="Kaip žaisti?"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div className="absolute top-4 right-4 z-50 flex flex-col md:flex-row gap-2">
+            <button
+              onClick={() => setShowStartMenu(true)}
+              className="bg-red-600 hover:bg-red-500 text-white p-2 rounded-full shadow-lg transition transform hover:scale-110"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M12 21a9 9 0 100-18 9 9 0 000 18z"
-              />
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
 
-          <button
-            onClick={() => setShowStartMenu(true)}
-            className="absolute top-4 right-4 z-50 bg-red-600 hover:bg-red-500 text-white p-2 rounded-full shadow-lg transition transform hover:scale-110"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <button
+              onClick={() => setShowExplanationModal(true)}
+              className="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-full shadow-lg transition transform hover:scale-110"
+              title="Kaip žaisti?"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M12 21a9 9 0 100-18 9 9 0 000 18z"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 

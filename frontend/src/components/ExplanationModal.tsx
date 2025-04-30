@@ -24,7 +24,7 @@ function ExplanationModal({ isOpen, onClose }: ExplanationModalProps) {
         <div className="space-y-4">
           <div>
             <h3 className="font-bold text-lg mb-1">1. Apžiūrėkite aplinką</h3>
-            <p className="text-gray-300">Jūs matote gatvės vaizdą. Apsidairykite tempiant pelę arba naudodami ekrano valdiklius.</p>
+            <p className="text-gray-300">Jūs matote gatvės vaizdą. Apsidairykite tempiant pelę.</p>
           </div>
           
           <div>
