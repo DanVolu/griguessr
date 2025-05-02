@@ -4,6 +4,8 @@ A geography guessing game that tests your knowledge of specific locations. Playe
 
 ![image](https://github.com/user-attachments/assets/5d8806ad-5304-40d6-8083-2b001e159bc5)
 ![image](https://github.com/user-attachments/assets/588625cf-ac7a-4e72-8d2d-6d56af2cc0c7)
+![image](https://github.com/user-attachments/assets/2fef6279-a4aa-4bff-8d7b-f759d18d9e0b)
+
 
 ## 🎮 Features
 
