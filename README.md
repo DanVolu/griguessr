@@ -8,7 +8,6 @@ A geography guessing game that tests your knowledge of specific locations. Playe
 
 
 ## 🎮 Features
-
 - Interactive Street View exploration
 - Map-based location guessing
 - Score system based on distance accuracy
@@ -18,11 +17,9 @@ A geography guessing game that tests your knowledge of specific locations. Playe
 - Mobile-friendly design
 
 ## 🚀 Demo
-
 Try the game here: https://kurcia.vercel.app/
 
 ## 🔧 Technology Stack
-
 - React
 - TypeScript
 - Tailwind CSS
@@ -30,7 +27,6 @@ Try the game here: https://kurcia.vercel.app/
 - Vite
 
 ## 📋 How to Play
-
 1. **Explore**: Navigate the Street View by dragging your mouse or finger
 2. **Guess**: Click on the map to place your guess marker
 3. **Submit**: Click the "Spėti" (Guess) button to confirm your answer
@@ -40,12 +36,10 @@ Try the game here: https://kurcia.vercel.app/
 ## 📦 Installation & Setup
 
 ### Prerequisites
-
 - Node.js (v16+)
 - Google Maps API key with Street View & Maps JavaScript API enabled
 
 ### Setup
-
 1. Clone the repository:
    ```bash
    git clone https://github.com/yourusername/kur-cia.git
@@ -87,7 +81,6 @@ const latLongs = [
 ```
 
 ## 🙏 Support & Contributing
-
 If you enjoy this project, consider:
 - ⭐ Starring the repository
 - 🐛 Opening issues for bugs or enhancements
